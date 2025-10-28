@@ -4,31 +4,47 @@ import { User } from "../models/user.model.js";
 export const protectRoute = async (req, res, next) => {
   try {
     const token = req.cookies.jwt;
+
+    // 1️⃣ Token না থাকলে
     if (!token) {
-      res.status(401).json({
-        message: "Unauthorized - no Toker Provided",
+      return res.status(401).json({
+        message: "Unauthorized - No Token Provided",
       });
     }
 
+    // 2️⃣ Token যাচাই
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     if (!decoded) {
-      res.status(401).json({
+      return res.status(401).json({
         message: "Unauthorized - Token is invalid",
       });
     }
-    const user = await User.findById(decoded.userId).select("-password");
 
+    // 3️⃣ User খোঁজা
+    const user = await User.findById(decoded.userId).select("-password");
     if (!user) {
-      res.status(404).json({
+      return res.status(404).json({
         message: "User not found",
       });
     }
 
+    // 4️⃣ সব ঠিক থাকলে req.user সেট করা
     req.user = user;
     next();
   } catch (error) {
     console.log("middleware error", error.message);
-    res.status(500).json({
+
+    // JWT verification ব্যর্থ হলে
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({ message: "Invalid Token" });
+    }
+
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({ message: "Token Expired" });
+    }
+
+    // অন্য কোনো error হলে
+    return res.status(500).json({
       message: "Internal Server Error",
     });
   }

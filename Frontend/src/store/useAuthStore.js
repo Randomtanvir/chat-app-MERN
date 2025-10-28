@@ -1,10 +1,11 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
+import toast from "react-hot-toast";
 
 export const useAuthStore = create((set) => ({
   authUser: null,
   isSigningUp: false,
-  isLoggingIng: false,
+  isLoggingIn: false,
   isUpdatingProfile: false,
 
   isCheckingAuth: true,
@@ -20,13 +21,42 @@ export const useAuthStore = create((set) => ({
       set({ isCheckingAuth: false });
     }
   },
+
+  signup: async (data) => {
+    set({ isSigningUp: true });
+    try {
+      const res = await axiosInstance.post("auth/signup", data);
+      set({ authUser: res.data });
+      toast.success("Signup successfully");
+    } catch (error) {
+      console.log("signup api call error", error);
+      toast.error(error?.response?.data?.message);
+    } finally {
+      set({ isSigningUp: false });
+    }
+  },
+
   login: async (data) => {
+    set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/login", data);
       set({ authUser: res.data });
+      toast.success("Login successfylly");
     } catch (error) {
-      console.log(error);
+      console.log("login api call error", error);
+      toast.error(error?.response?.data?.message);
+    } finally {
+      set({ isLoggingIn: false });
+    }
+  },
+  logout: async () => {
+    try {
+      await axiosInstance.post("/auth/logout");
       set({ authUser: null });
+      toast.success("Logout successfully");
+    } catch (error) {
+      console.log("logout api call error", error);
+      toast.error(error?.response?.data?.message);
     }
   },
 }));

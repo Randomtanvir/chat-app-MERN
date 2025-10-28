@@ -3,7 +3,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { LogOut, MessageSquare, Settings, User } from "lucide-react";
 
 const Navbar = () => {
-  const { authUser } = useAuthStore();
+  const { logout, authUser } = useAuthStore();
 
   return (
     <header
@@ -43,7 +43,10 @@ const Navbar = () => {
                   <span className="hidden sm:inline">Profile</span>
                 </Link>
 
-                <button className="flex gap-2 items-center">
+                <button
+                  onClick={logout}
+                  className="flex cursor-pointer gap-2 items-center"
+                >
                   <LogOut className="size-5" />
                   <span className="hidden sm:inline">Logout</span>
                 </button>
