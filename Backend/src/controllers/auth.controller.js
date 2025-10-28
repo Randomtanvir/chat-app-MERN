@@ -1,4 +1,5 @@
-import { generateTocken } from "../lib/utils.js";
+import cloudinary from "../lib/cloudinary.js";
+import { generateToken } from "../lib/utils.js";
 import { User } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
 
@@ -18,6 +19,11 @@ export const signup = async (req, res) => {
       return res.status(400).json({
         message: "All field are required.",
       });
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
     }
 
     // password length  validiton
@@ -52,7 +58,7 @@ export const signup = async (req, res) => {
       });
     }
 
-    generateTocken(newUser._id, res);
+    generateToken(newUser._id, res);
     await newUser.save();
 
     //send response
@@ -67,5 +73,110 @@ export const signup = async (req, res) => {
     return res.status(500).json({ message: "Internal Server Error" });
   }
 };
-export const login = async (req, res) => {};
-export const logout = async (req, res) => {};
+export const login = async (req, res) => {
+  const { email, password } = req.body;
+  try {
+    if (!email || !password) {
+      return res.status(400).json({
+        message: "All fiend are required.",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        message: "Invalid email or password",
+      });
+    }
+
+    const isValidPassword = await bcrypt.compare(password, user.password);
+
+    //this sintax does not work
+    // const isValidPassword = await bcrypt.compare(user.password, password);
+    if (!isValidPassword) {
+      return res.status(400).json({
+        message: "Invalid credential",
+      });
+    }
+
+    generateToken(user._id, res);
+
+    res.status(200).json({
+      _id: user._id,
+      fullName: user.fullName,
+      email: user.email,
+      profilePic: user.profilePic,
+    });
+  } catch (error) {
+    res.status(500).json({
+      message: "Internel server error from login-controller",
+    });
+  }
+};
+export const logout = async (req, res) => {
+  try {
+    res.cookie("jwt", "", { maxAge: 0 });
+    res.status(200).json({
+      message: "Logged out successfully",
+    });
+
+    //     res.cookie("jwt", "", {
+    //   httpOnly: true,
+    //   secure: process.env.NODE_ENV === "production",
+    //   sameSite: "strict",
+    //   expires: new Date(0),
+    // });
+  } catch (error) {
+    res.status(500).json({
+      message: "Internel server error" + error.message,
+    });
+  }
+};
+export const updateprofile = async (req, res) => {
+  try {
+    const { profilePic } = req.body;
+    const userId = req.user._id;
+
+    if (!profilePic) {
+      return res.status(400).json({
+        message: "Profile Pic is required",
+      });
+    }
+
+    const uploadResponse = await cloudinary.uploader
+      .upload(profilePic)
+      .catch(() => null);
+    if (!uploadResponse) {
+      return res.status(500).json({ message: "Image upload failed" });
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePic: uploadResponse.secure_url },
+      { new: true }
+    );
+
+    res.status(200).json({
+      _id: updatedUser._id,
+      fullName: updatedUser.fullName,
+      email: updatedUser.email,
+      profilePic: updatedUser.profilePic,
+    });
+  } catch (error) {
+    console.log("profile update controller error", error.message);
+    return res.status(500).json({
+      message: "Internal Server Error",
+    });
+  }
+};
+
+export const checkAuth = (req, res) => {
+  try {
+    res.status(200).json(req.user);
+  } catch (error) {
+    console.log("error in checkAuth controller :", error.message);
+    res.status(500).json({
+      message: "Internal Server errror",
+    });
+  }
+};
