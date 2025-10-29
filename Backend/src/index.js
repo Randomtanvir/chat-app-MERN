@@ -10,6 +10,7 @@ dotenv.config();
 const app = express();
 app.use(express.json());
 app.use(cookieParser());
+
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -22,7 +23,7 @@ const port = process.env.PORT || 3001;
 
 //routes
 app.use("/api/auth", authRouts);
-app.use("/api/message", messageRoutes);
+app.use("/api/messages", messageRoutes);
 
 app.listen(port, () => {
   console.log(`server running on port : ${port}`);

@@ -1,4 +1,4 @@
-import cloudinary from "../lib/cloudinary.js";
+import { uploadImageInCloudinary } from "../lib/cloudinary.js";
 import { generateToken } from "../lib/utils.js";
 import { User } from "../models/user.model.js";
 import bcrypt from "bcryptjs";
@@ -134,39 +134,29 @@ export const logout = async (req, res) => {
 };
 export const updateprofile = async (req, res) => {
   try {
-    const { profilePic } = req.body;
-    const userId = req.user._id;
-
-    if (!profilePic) {
-      return res.status(400).json({
-        message: "Profile Pic is required",
-      });
+    if (!req.file) {
+      return res.status(400).json({ message: "No file uploaded" });
     }
 
-    const uploadResponse = await cloudinary.uploader
-      .upload(profilePic)
-      .catch(() => null);
-    if (!uploadResponse) {
-      return res.status(500).json({ message: "Image upload failed" });
-    }
+    // Cloudinary upload
+    const result = await uploadImageInCloudinary(req.file);
 
+    // Update user profile
     const updatedUser = await User.findByIdAndUpdate(
-      userId,
-      { profilePic: uploadResponse.secure_url },
+      req.user._id,
+      { profilePic: result.secure_url },
       { new: true }
     );
 
-    res.status(200).json({
+    res.json({
       _id: updatedUser._id,
       fullName: updatedUser.fullName,
       email: updatedUser.email,
       profilePic: updatedUser.profilePic,
     });
   } catch (error) {
-    console.log("profile update controller error", error.message);
-    return res.status(500).json({
-      message: "Internal Server Error",
-    });
+    console.error(error);
+    res.status(500).json({ message: "Upload failed" });
   }
 };
 

@@ -7,8 +7,8 @@ export const useAuthStore = create((set) => ({
   isSigningUp: false,
   isLoggingIn: false,
   isUpdatingProfile: false,
-
   isCheckingAuth: true,
+  onlineUsers: [],
 
   checkAuth: async () => {
     try {
@@ -49,6 +49,7 @@ export const useAuthStore = create((set) => ({
       set({ isLoggingIn: false });
     }
   },
+
   logout: async () => {
     try {
       await axiosInstance.post("/auth/logout");
@@ -57,6 +58,22 @@ export const useAuthStore = create((set) => ({
     } catch (error) {
       console.log("logout api call error", error);
       toast.error(error?.response?.data?.message);
+    }
+  },
+
+  updateProfile: async (data) => {
+    console.log(data);
+    set({ isUpdatingProfile: true });
+    try {
+      const res = await axiosInstance.put("/auth/update-profile", data);
+      console.log(res);
+      set({ authUser: res.data });
+      toast.success("Profile Updated");
+    } catch (error) {
+      console.log("profile update api call error", error);
+      toast.error(error?.response?.data?.message);
+    } finally {
+      set({ isUpdatingProfile: false });
     }
   },
 }));
