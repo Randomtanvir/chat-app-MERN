@@ -1,6 +1,7 @@
 import { Message } from "../models/message.mode.js";
 import { User } from "../models/user.model.js";
 import cloudinary, { uploadImageInCloudinary } from "../lib/cloudinary.js";
+import { activeUserSocketId, io } from "../lib/socket.js";
 
 export const getUsersForSidebar = async (req, res) => {
   try {
@@ -48,8 +49,6 @@ export const sendMessage = async (req, res) => {
     const { id: receiverId } = req.params;
     const myId = req.user._id;
 
-    console.log(text);
-    console.log(req.file);
     let imageUrl = null;
     if (req.file) {
       const result = await uploadImageInCloudinary(req.file);
@@ -71,7 +70,20 @@ export const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
-    // left realtime message
+    // realtime message
+    const receiverSocketId = activeUserSocketId(receiverId);
+
+    // sender-এর socket id ও ধরো
+    const senderSocketId = activeUserSocketId(myId);
+
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage);
+    }
+
+    // senderকেও realtime message পাঠাও
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("newMessage", newMessage);
+    }
 
     res.status(200).json(newMessage);
   } catch (error) {
