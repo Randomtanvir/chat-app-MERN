@@ -20,7 +20,7 @@ app.use(
   })
 );
 
-//runnig port
+//runnig port prod
 const port = process.env.PORT || 3001;
 
 //routes
