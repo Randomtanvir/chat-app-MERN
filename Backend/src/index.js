@@ -15,7 +15,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "https://chat-app-mern-2-gd0f.onrender.com",
     credentials: true,
   })
 );

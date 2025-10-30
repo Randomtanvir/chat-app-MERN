@@ -7,7 +7,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173"],
+    origin: ["https://chat-app-mern-2-gd0f.onrender.com"],
   },
   pingTimeout: 60000, // disconnect before 60s idle
   pingInterval: 25000, // ping every 25s
