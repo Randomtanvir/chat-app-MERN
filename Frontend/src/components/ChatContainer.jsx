@@ -18,18 +18,17 @@ const ChatContainer = () => {
   } = useChatStore();
   const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
-  useEffect(() => {
-    // 👇 socket listener একবারই লাগাও
-    subscribeToMessages();
-    return () => unsubscribeFromMessages();
-  }, []); // ⚡ খালি dependency → double message বন্ধ
 
   useEffect(() => {
-    // 👇 user change হলে শুধু messages ফেচ করো
-    if (selectedUser?._id) {
-      getMessages(selectedUser._id);
-    }
-  }, [selectedUser?._id]);
+    getMessages(selectedUser._id);
+    subscribeToMessages();
+    return () => unsubscribeFromMessages();
+  }, [
+    selectedUser._id,
+    getMessages,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+  ]);
 
   useEffect(() => {
     if (messageEndRef.current && messages) {

@@ -72,16 +72,10 @@ export const sendMessage = async (req, res) => {
 
     // ✅ Realtime message
     const receiverSocketId = activeUserSocketId(receiverId);
-    const senderSocketId = activeUserSocketId(myId);
-
-    // ✅ Prevent duplicate emit
-    if (receiverSocketId && receiverSocketId !== senderSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
-    }
 
     // ✅ Always emit to sender for UI update
-    if (senderSocketId) {
-      io.to(senderSocketId).emit("newMessage", newMessage);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("newMessage", newMessage);
     }
 
     res.status(200).json(newMessage);
